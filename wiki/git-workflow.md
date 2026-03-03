@@ -53,7 +53,9 @@ Outline:
 
 ### `<task-branch>`
 
-We'll refer to the [new branch](#switch-to-a-new-branch) as `<task-branch>`.
+The [new branch for the task](#switch-to-the-task-branch).
+
+Alternatively, the name of that branch (without `<` and `>`).
 
 ## Edit files
 
