@@ -333,10 +333,10 @@ This is an important step that will make your life easier. The agent we will use
   
   You can now ask it, for example:
   ```
-  What is this lab supposed to teach me.
+  What is this lab supposed to teach me?
   ```
   
-  > [!NOTE] It is my personal preference to use terminal version of the agent, yet there are other ways to use it as an VS Code extension, read more here if interested: [AI coding agent setup](../../wiki/coding-agents.md)
+  > **Note**: It is my personal preference to use terminal version of the agent, yet there are other ways to use it as an VS Code extension, read more here if interested: [AI coding agent setup](../../wiki/coding-agents.md)
 
 ----
 
