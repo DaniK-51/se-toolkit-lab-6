@@ -1,4 +1,4 @@
-# Setup
+# For the course instructors
 
 <h2>Table of contents</h2>
 
