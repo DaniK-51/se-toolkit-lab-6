@@ -33,11 +33,7 @@ No issues found.
 
 ### D7. Structural compliance
 
-1. **[Medium]** — [Task 1 summary](../../lab-plan.md#task-1--explore-the-observability-stack), line 40. The summary contains five sentences; convention Section 7.4 requires two to four. **Suggested fix:** Merge the last two sentences ("Students fill in a structured questionnaire…" and "The questionnaire is committed…") into one, or remove the least essential sentence to bring the count to four.
-
-2. **[Medium]** — [Task 3 summary](../../lab-plan.md#task-3--implement-the-agentic-loop), lines 71. The summary contains six sentences; convention Section 7.4 requires two to four. **Suggested fix:** Merge related sentences (e.g., combine the sentence about available tools with the one about the seed project skeleton, and merge the anomaly and observation sentences) to bring the count to four.
-
-3. **[Medium]** — [Optional Task 1 summary](../../lab-plan.md#task-1--add-a-traces-tool-using-the-tempo-api), lines 89. The summary contains five sentences; convention Section 7.4 requires two to four. **Suggested fix:** Merge the commit-ordering sentence ("The Docker Compose update and the tool implementation must each be a separate commit.") into the preceding sentence, or move it into an acceptance criterion since it is a verifiable constraint rather than a narrative description.
+No issues found.
 
 ### D8. Practical feasibility
 
@@ -64,10 +60,10 @@ No empty sections found.
 | Category | Count |
 |---|---|
 | Lab plan [High] | 0 |
-| Lab plan [Medium] | 3 |
+| Lab plan [Medium] | 0 |
 | Lab plan [Low] | 1 |
 | TODOs | 0 |
 | Empty sections | 0 |
-| **Total** | **4** |
+| **Total** | **1** |
 
-**Overall:** The lab plan is well-structured with clear learning outcomes, proper Bloom's taxonomy coverage, a coherent workplace narrative, and well-sequenced tasks that build naturally from exploration through implementation to agentic reasoning. The remaining issues are three task summaries exceeding the two-to-four-sentence limit (D7) and one low-severity finding noting a potential cognitive jump into LLM tool-calling without prior introduction (D9). Addressing the summary lengths would bring the plan into full compliance.
+**Overall:** The lab plan is well-structured with clear learning outcomes, proper Bloom's taxonomy coverage, a coherent workplace narrative, and well-sequenced tasks that build naturally from exploration through implementation to agentic reasoning. The one remaining finding notes a potential cognitive jump into LLM tool-calling without prior introduction (D9).
