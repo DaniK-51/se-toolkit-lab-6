@@ -125,7 +125,7 @@ def tool_list_files(path: str) -> str:
 
 
 def tool_query_api(
-    method: str, path: str, body: str | None = None, auth: bool = True
+    method: str, path: str, body: str | None = None, auth: bool = False
 ) -> str:
     """Call the backend API.
 
@@ -133,7 +133,7 @@ def tool_query_api(
         method: HTTP method (GET, POST, etc.)
         path: API path (e.g., '/items/', '/analytics/completion-rate')
         body: Optional JSON request body for POST/PUT requests
-        auth: Whether to include authentication header (default: True)
+        auth: Whether to include authentication header (default: False)
 
     Returns:
         JSON string with status_code and body, or error message.
@@ -231,8 +231,8 @@ TOOLS = [
                     },
                     "auth": {
                         "type": "boolean",
-                        "description": "Whether to include authentication header (default: true). Set to false to test unauthenticated access.",
-                        "default": True,
+                        "description": "Whether to include authentication header (default: false). Set to true for authenticated requests.",
+                        "default": False,
                     },
                 },
                 "required": ["method", "path"],
@@ -263,8 +263,8 @@ Strategy:
 5. You can also read source code files (e.g., backend/app/main.py)
 
 When to use each tool:
-- Use query_api when asked about data in the database, API behavior, or status codes
-- Use query_api with auth=false to test unauthenticated access (e.g., "without authentication header")
+- Use query_api for data queries, API behavior, or status codes (unauthenticated by default)
+- Use query_api with auth=true for endpoints requiring authentication
 - Use read_file/list_files when asked about documentation, source code, or configuration
 
 Rules:
