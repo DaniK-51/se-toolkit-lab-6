@@ -271,6 +271,9 @@ Rules:
 - ALWAYS include the source file path in your final answer (e.g., "Source: wiki/file.md#section")
 - Use markdown anchors for sections when possible (e.g., wiki/file.md#section-name)
 - Make at most 10 tool calls
+- COMPLETELY explore directories before answering - don't stop midway
+- When you find relevant files, READ them with read_file before answering
+- Give a COMPLETE answer before stopping - don't say "let me check" without actually checking
 - When you have the answer, return it immediately without more tool calls
 - If a file doesn't exist or can't be read, try a different approach
 - If an API call fails, try to understand the error and explain it
