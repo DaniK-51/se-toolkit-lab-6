@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 
 # Constants
-MAX_TOOL_CALLS = 10
+MAX_TOOL_CALLS = 15
 PROJECT_ROOT = Path(__file__).parent
 
 
@@ -124,13 +124,16 @@ def tool_list_files(path: str) -> str:
         return f"Error listing {path}: {e}"
 
 
-def tool_query_api(method: str, path: str, body: str | None = None) -> str:
+def tool_query_api(
+    method: str, path: str, body: str | None = None, auth: bool = False
+) -> str:
     """Call the backend API.
 
     Args:
         method: HTTP method (GET, POST, etc.)
         path: API path (e.g., '/items/', '/analytics/completion-rate')
         body: Optional JSON request body for POST/PUT requests
+        auth: Whether to include authentication header (default: False)
 
     Returns:
         JSON string with status_code and body, or error message.
@@ -138,13 +141,15 @@ def tool_query_api(method: str, path: str, body: str | None = None) -> str:
     base_url = os.getenv("AGENT_API_BASE_URL", "http://localhost:42002")
     api_key = os.getenv("LMS_API_KEY")
 
-    if not api_key:
-        return "Error: LMS_API_KEY not set in environment"
-
     url = f"{base_url}{path}"
-    headers = {"Authorization": f"Bearer {api_key}"}
+    headers = {}
 
-    print(f"  Calling API: {method} {url}", file=sys.stderr)
+    if auth:
+        if not api_key:
+            return "Error: LMS_API_KEY not set in environment"
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    print(f"  Calling API: {method} {url} (auth={auth})", file=sys.stderr)
 
     try:
         if body:
@@ -208,7 +213,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "query_api",
-            "description": "Call the backend API to query data or test endpoints. Use this for questions about the running system, database counts, or API behavior.",
+            "description": "Call the backend API to query data or test endpoints. Use this for questions about the running system, database counts, or API behavior. IMPORTANT: Set auth=false when testing unauthenticated requests (e.g., 'without authentication header', 'without sending credentials').",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -223,6 +228,11 @@ TOOLS = [
                     "body": {
                         "type": "string",
                         "description": "Optional JSON request body for POST/PUT requests",
+                    },
+                    "auth": {
+                        "type": "boolean",
+                        "description": "Whether to include authentication header (default: false). Set to true for authenticated requests.",
+                        "default": False,
                     },
                 },
                 "required": ["method", "path"],
@@ -243,7 +253,7 @@ SYSTEM_PROMPT = """You are a helpful assistant that answers questions using the 
 You have access to these tools:
 - list_files(path): List files and directories in a directory
 - read_file(path): Read the contents of a file
-- query_api(method, path, body): Call the backend API to query data or test endpoints
+- query_api(method, path, body, auth): Call the backend API to query data or test endpoints
 
 Strategy:
 1. Use list_files("wiki") to discover documentation files
@@ -253,13 +263,18 @@ Strategy:
 5. You can also read source code files (e.g., backend/app/main.py)
 
 When to use each tool:
-- Use query_api when asked about data in the database, API behavior, or status codes
+- Use query_api for data queries, API behavior, or status codes (unauthenticated by default)
+- Use query_api with auth=true for endpoints requiring authentication
 - Use read_file/list_files when asked about documentation, source code, or configuration
 
 Rules:
-- Always include the source file path when answering
+- ALWAYS include the source file path in your final answer (e.g., "Source: wiki/file.md#section")
 - Use markdown anchors for sections when possible (e.g., wiki/file.md#section-name)
-- Make at most 10 tool calls
+- Make at most 15 tool calls
+- COMPLETELY explore directories before answering - don't stop midway
+- When you find relevant files, READ them with read_file before answering
+- Give a COMPLETE answer before stopping - don't say "let me check" without actually checking
+- NEVER say "let me examine" or "let me check" - actually DO the examination with tools
 - When you have the answer, return it immediately without more tool calls
 - If a file doesn't exist or can't be read, try a different approach
 - If an API call fails, try to understand the error and explain it
@@ -386,8 +401,18 @@ def run_agentic_loop(
         if not tool_calls:
             print(f"  Final answer received", file=sys.stderr)
             # Extract source from content if possible
-            source = extract_source(content)
+            source = extract_source(content or "")
             return content or "", source, all_tool_calls
+
+        # Add assistant message with tool calls to conversation
+        # Handle case where content might be null
+        assistant_message = {"role": "assistant"}
+        if content:
+            assistant_message["content"] = content
+        if tool_calls:
+            assistant_message["tool_calls"] = tool_calls
+
+        messages.append(assistant_message)
 
         # Execute tool calls
         for tool_call in tool_calls:
@@ -395,10 +420,16 @@ def run_agentic_loop(
             all_tool_calls.append(result)
 
             # Add tool response to messages
+            # OpenAI format: role=tool, tool_call_id=string, content=string
+            tool_call_id = tool_call.get("id", "")
+            if not tool_call_id:
+                # Generate a simple ID if not provided
+                tool_call_id = f"call_{len(all_tool_calls)}"
+
             messages.append(
                 {
                     "role": "tool",
-                    "tool_call_id": tool_call.get("id"),
+                    "tool_call_id": tool_call_id,
                     "content": result["result"],
                 }
             )
@@ -410,12 +441,41 @@ def run_agentic_loop(
 
 def extract_source(content: str) -> str:
     """Extract source reference from content if present."""
-    # Look for patterns like wiki/file.md or wiki/file.md#section
     import re
 
+    # Look for patterns like wiki/file.md or wiki/file.md#section
     match = re.search(r"(wiki/[\w\-/]+\.md(?:#[\w\-]+)?)", content)
     if match:
         return match.group(1)
+
+    # Look for patterns like (file.md#section) in parentheses
+    match = re.search(r"\(([\w\-/]+\.md(?:#[\w\-]+)?)\)", content)
+    if match:
+        filename = match.group(1)
+        if filename.startswith("wiki/"):
+            return filename
+        return f"wiki/{filename}"
+
+    # Look for patterns like "in the xxx.md file" or "from xxx.md"
+    match = re.search(r"(?:in|from|see) the ([\w\-/]+\.md)", content, re.IGNORECASE)
+    if match:
+        filename = match.group(1)
+        # If it's already a full path like wiki/github.md
+        if filename.startswith("wiki/"):
+            # Try to find a section heading mentioned
+            section_match = re.search(r"##?\s+([A-Za-z\s]+?)(?:\.|$)", content)
+            if section_match:
+                section = section_match.group(1).strip().lower().replace(" ", "-")
+                return f"{filename}#{section}"
+            return filename
+        # Otherwise assume it's in wiki/
+        return f"wiki/{filename}"
+
+    # Look for Source: xxx pattern
+    match = re.search(r"Source:\s*([\w\-/]+\.md(?:#[\w\-]+)?)", content, re.IGNORECASE)
+    if match:
+        return match.group(1)
+
     return ""
 
 
