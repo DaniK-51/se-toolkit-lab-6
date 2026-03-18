@@ -268,7 +268,7 @@ When to use each tool:
 - Use read_file/list_files when asked about documentation, source code, or configuration
 
 Rules:
-- Always include the source file path when answering
+- ALWAYS include the source file path in your final answer (e.g., "Source: wiki/file.md#section")
 - Use markdown anchors for sections when possible (e.g., wiki/file.md#section-name)
 - Make at most 10 tool calls
 - When you have the answer, return it immediately without more tool calls
@@ -437,12 +437,33 @@ def run_agentic_loop(
 
 def extract_source(content: str) -> str:
     """Extract source reference from content if present."""
-    # Look for patterns like wiki/file.md or wiki/file.md#section
     import re
 
+    # Look for patterns like wiki/file.md or wiki/file.md#section
     match = re.search(r"(wiki/[\w\-/]+\.md(?:#[\w\-]+)?)", content)
     if match:
         return match.group(1)
+
+    # Look for patterns like "in the xxx.md file" or "from xxx.md"
+    match = re.search(r"(?:in|from|see) the ([\w\-/]+\.md)", content, re.IGNORECASE)
+    if match:
+        filename = match.group(1)
+        # If it's already a full path like wiki/github.md
+        if filename.startswith("wiki/"):
+            # Try to find a section heading mentioned
+            section_match = re.search(r"##?\s+([A-Za-z\s]+?)(?:\.|$)", content)
+            if section_match:
+                section = section_match.group(1).strip().lower().replace(" ", "-")
+                return f"{filename}#{section}"
+            return filename
+        # Otherwise assume it's in wiki/
+        return f"wiki/{filename}"
+
+    # Look for Source: xxx pattern
+    match = re.search(r"Source:\s*([\w\-/]+\.md(?:#[\w\-]+)?)", content, re.IGNORECASE)
+    if match:
+        return match.group(1)
+
     return ""
 
 
