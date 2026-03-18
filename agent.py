@@ -124,13 +124,16 @@ def tool_list_files(path: str) -> str:
         return f"Error listing {path}: {e}"
 
 
-def tool_query_api(method: str, path: str, body: str | None = None) -> str:
+def tool_query_api(
+    method: str, path: str, body: str | None = None, auth: bool = True
+) -> str:
     """Call the backend API.
 
     Args:
         method: HTTP method (GET, POST, etc.)
         path: API path (e.g., '/items/', '/analytics/completion-rate')
         body: Optional JSON request body for POST/PUT requests
+        auth: Whether to include authentication header (default: True)
 
     Returns:
         JSON string with status_code and body, or error message.
@@ -138,13 +141,15 @@ def tool_query_api(method: str, path: str, body: str | None = None) -> str:
     base_url = os.getenv("AGENT_API_BASE_URL", "http://localhost:42002")
     api_key = os.getenv("LMS_API_KEY")
 
-    if not api_key:
-        return "Error: LMS_API_KEY not set in environment"
-
     url = f"{base_url}{path}"
-    headers = {"Authorization": f"Bearer {api_key}"}
+    headers = {}
 
-    print(f"  Calling API: {method} {url}", file=sys.stderr)
+    if auth:
+        if not api_key:
+            return "Error: LMS_API_KEY not set in environment"
+        headers["Authorization"] = f"Bearer {api_key}"
+
+    print(f"  Calling API: {method} {url} (auth={auth})", file=sys.stderr)
 
     try:
         if body:
@@ -208,7 +213,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "query_api",
-            "description": "Call the backend API to query data or test endpoints. Use this for questions about the running system, database counts, or API behavior.",
+            "description": "Call the backend API to query data or test endpoints. Use this for questions about the running system, database counts, or API behavior. Set auth=false to test unauthenticated requests.",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -223,6 +228,11 @@ TOOLS = [
                     "body": {
                         "type": "string",
                         "description": "Optional JSON request body for POST/PUT requests",
+                    },
+                    "auth": {
+                        "type": "boolean",
+                        "description": "Whether to include authentication header (default: true). Set to false to test unauthenticated access.",
+                        "default": True,
                     },
                 },
                 "required": ["method", "path"],
@@ -243,7 +253,7 @@ SYSTEM_PROMPT = """You are a helpful assistant that answers questions using the 
 You have access to these tools:
 - list_files(path): List files and directories in a directory
 - read_file(path): Read the contents of a file
-- query_api(method, path, body): Call the backend API to query data or test endpoints
+- query_api(method, path, body, auth): Call the backend API to query data or test endpoints
 
 Strategy:
 1. Use list_files("wiki") to discover documentation files
@@ -254,6 +264,7 @@ Strategy:
 
 When to use each tool:
 - Use query_api when asked about data in the database, API behavior, or status codes
+- Use query_api with auth=false to test unauthenticated access
 - Use read_file/list_files when asked about documentation, source code, or configuration
 
 Rules:
