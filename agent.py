@@ -447,6 +447,14 @@ def extract_source(content: str) -> str:
     if match:
         return match.group(1)
 
+    # Look for patterns like (file.md#section) in parentheses
+    match = re.search(r"\(([\w\-/]+\.md(?:#[\w\-]+)?)\)", content)
+    if match:
+        filename = match.group(1)
+        if filename.startswith("wiki/"):
+            return filename
+        return f"wiki/{filename}"
+
     # Look for patterns like "in the xxx.md file" or "from xxx.md"
     match = re.search(r"(?:in|from|see) the ([\w\-/]+\.md)", content, re.IGNORECASE)
     if match:
