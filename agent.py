@@ -448,6 +448,11 @@ def extract_source(content: str) -> str:
     if match:
         return match.group(1)
 
+    # Look for patterns like backend/app/routers/file.py or backend/app/routers/file.py#L10-L20
+    match = re.search(r"(backend/[\w\-/]+\.py(?:#L?\d+(?:-L?\d+)?)?)", content)
+    if match:
+        return match.group(1)
+
     # Look for patterns like (file.md#section) in parentheses
     match = re.search(r"\(([\w\-/]+\.md(?:#[\w\-]+)?)\)", content)
     if match:
@@ -472,7 +477,11 @@ def extract_source(content: str) -> str:
         return f"wiki/{filename}"
 
     # Look for Source: xxx pattern
-    match = re.search(r"Source:\s*([\w\-/]+\.md(?:#[\w\-]+)?)", content, re.IGNORECASE)
+    match = re.search(
+        r"Source:\s*([\w\-/]+\.md(?:#[\w\-]+)?|backend/[\w\-/]+\.py(?:#L?\d+(?:-L?\d+)?)?)",
+        content,
+        re.IGNORECASE,
+    )
     if match:
         return match.group(1)
 
