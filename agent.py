@@ -386,8 +386,18 @@ def run_agentic_loop(
         if not tool_calls:
             print(f"  Final answer received", file=sys.stderr)
             # Extract source from content if possible
-            source = extract_source(content)
+            source = extract_source(content or "")
             return content or "", source, all_tool_calls
+
+        # Add assistant message with tool calls to conversation
+        # Handle case where content might be null
+        assistant_message = {"role": "assistant"}
+        if content:
+            assistant_message["content"] = content
+        if tool_calls:
+            assistant_message["tool_calls"] = tool_calls
+
+        messages.append(assistant_message)
 
         # Execute tool calls
         for tool_call in tool_calls:
@@ -395,10 +405,16 @@ def run_agentic_loop(
             all_tool_calls.append(result)
 
             # Add tool response to messages
+            # OpenAI format: role=tool, tool_call_id=string, content=string
+            tool_call_id = tool_call.get("id", "")
+            if not tool_call_id:
+                # Generate a simple ID if not provided
+                tool_call_id = f"call_{len(all_tool_calls)}"
+
             messages.append(
                 {
                     "role": "tool",
-                    "tool_call_id": tool_call.get("id"),
+                    "tool_call_id": tool_call_id,
                     "content": result["result"],
                 }
             )
