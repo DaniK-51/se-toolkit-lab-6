@@ -21,7 +21,7 @@ from dotenv import load_dotenv
 
 
 # Constants
-MAX_TOOL_CALLS = 10
+MAX_TOOL_CALLS = 15
 PROJECT_ROOT = Path(__file__).parent
 
 
