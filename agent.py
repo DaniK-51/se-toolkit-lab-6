@@ -213,7 +213,7 @@ TOOLS = [
         "type": "function",
         "function": {
             "name": "query_api",
-            "description": "Call the backend API to query data or test endpoints. Use this for questions about the running system, database counts, or API behavior. Set auth=false to test unauthenticated requests.",
+            "description": "Call the backend API to query data or test endpoints. Use this for questions about the running system, database counts, or API behavior. IMPORTANT: Set auth=false when testing unauthenticated requests (e.g., 'without authentication header', 'without sending credentials').",
             "parameters": {
                 "type": "object",
                 "properties": {
@@ -264,7 +264,7 @@ Strategy:
 
 When to use each tool:
 - Use query_api when asked about data in the database, API behavior, or status codes
-- Use query_api with auth=false to test unauthenticated access
+- Use query_api with auth=false to test unauthenticated access (e.g., "without authentication header")
 - Use read_file/list_files when asked about documentation, source code, or configuration
 
 Rules:
